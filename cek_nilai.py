@@ -2,39 +2,49 @@
 Script Penguji Nilai Praktikum Blockchain
 =========================================
 Penggunaan:
-    python cek_nilai.py 1    -> Menguji Level 1
-    python cek_nilai.py 2    -> Menguji Level 2
-    python cek_nilai.py 3    -> Menguji Level 3
-    python cek_nilai.py 4    -> Menguji Level 4
-    python cek_nilai.py 5    -> Menguji Level 5
-    python cek_nilai.py all  -> Menguji Seluruh Level (1 - 5)
+    python cek_nilai.py 1              -> Menguji Level 1
+    python cek_nilai.py 1 2 3 4 5      -> Menguji Level 1 s.d. 5
+    python cek_nilai.py all            -> Menguji Seluruh Level
 """
 
+import os
 import sys
 import pytest
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+LATIHAN_DIR = os.path.join(HERE, "latihan") if os.path.isdir(os.path.join(HERE, "latihan")) else HERE
+
 LEVEL_MAP = {
-    "1": "test_level01_hash.py",
-    "2": "test_level02_blok.py",
-    "3": "test_level03_tampering.py",
-    "4": "test_level04_transaksi.py",
-    "5": "test_level05_pow_nonce.py",
+    "1": os.path.join(LATIHAN_DIR, "test_level01_hash.py"),
+    "2": os.path.join(LATIHAN_DIR, "test_level02_blok.py"),
+    "3": os.path.join(LATIHAN_DIR, "test_level03_tampering.py"),
+    "4": os.path.join(LATIHAN_DIR, "test_level04_transaksi.py"),
+    "5": os.path.join(LATIHAN_DIR, "test_level05_pow_nonce.py"),
 }
 
 
 def main():
-    arg = sys.argv[1] if len(sys.argv) > 1 else "all"
-    if arg in LEVEL_MAP:
-        test_file = LEVEL_MAP[arg]
-        print(f"\n==================== MENGUJI LEVEL {arg} ====================")
-        exit_code = pytest.main(["-v", test_file])
-    elif arg.lower() in ("all", "semua"):
+    args = sys.argv[1:]
+    if not args or "all" in [a.lower() for a in args] or "semua" in [a.lower() for a in args]:
         print("\n==================== MENGUJI SEMUA LEVEL (1 - 5) ====================")
-        exit_code = pytest.main(["-v"])
-    else:
-        print(f"Argumen '{arg}' tidak valid.")
+        files = [LEVEL_MAP[k] for k in sorted(LEVEL_MAP.keys()) if os.path.exists(LEVEL_MAP[k])]
+        exit_code = pytest.main(["-v"] + files)
+        sys.exit(exit_code)
+
+    files_to_test = []
+    for arg in args:
+        if arg in LEVEL_MAP and os.path.exists(LEVEL_MAP[arg]):
+            files_to_test.append(LEVEL_MAP[arg])
+        else:
+            print(f"Peringatan: Level '{arg}' tidak valid atau file pengujian tidak ditemukan.")
+
+    if not files_to_test:
+        print("Tidak ada file pengujian yang ditemukan.")
         print("Gunakan: python cek_nilai.py [1|2|3|4|5|all]")
-        exit_code = 1
+        sys.exit(1)
+
+    print(f"\n==================== MENGUJI LEVEL {', '.join(args)} ====================")
+    exit_code = pytest.main(["-v"] + files_to_test)
     sys.exit(exit_code)
 
 
